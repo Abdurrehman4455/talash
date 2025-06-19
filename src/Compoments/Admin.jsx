@@ -1,15 +1,16 @@
-// src/Components/Admin.jsx
+// Admin.jsx (responsive version)
 import React, { useState, useEffect } from 'react';
 import {
   FaPlusCircle,
   FaList,
   FaMapMarkedAlt,
   FaSignOutAlt,
+  FaBars,
+  FaTimes,
 } from 'react-icons/fa';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore';
 
-// ✅ Hardcoded values (until .env works reliably)
 const CLOUD_NAME = 'dca9mcjte';
 const UPLOAD_PRESET = 'react_upload';
 
@@ -17,6 +18,7 @@ function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [tours, setTours] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newTour, setNewTour] = useState({
     title: '',
     description: '',
@@ -47,26 +49,18 @@ function AdminDashboard() {
   const handleAddTour = async (e) => {
     e.preventDefault();
     let imageUrl = '';
-
     try {
-      console.log('Uploading to Cloudinary:', CLOUD_NAME, UPLOAD_PRESET);
-
       if (newTour.image) {
         const formData = new FormData();
         formData.append('file', newTour.image);
         formData.append('upload_preset', UPLOAD_PRESET);
 
-       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-  method: 'POST',
-  body: formData,
-});
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
         const data = await res.json();
-        console.log('Cloudinary response:', data);
-
-        if (!data.secure_url) {
-          throw new Error(data.error?.message || 'Image upload failed');
-        }
-
+        if (!data.secure_url) throw new Error(data.error?.message || 'Image upload failed');
         imageUrl = data.secure_url;
       }
 
@@ -84,21 +78,25 @@ function AdminDashboard() {
       setShowModal(false);
       fetchTours();
     } catch (err) {
-      console.error('Upload or save failed:', err);
+      console.error(err);
       alert('Failed to upload image or save data. Please try again.');
     }
   };
 
   const Section = ({ id, children }) => (
-    <section id={id} className={`py-6 px-6 ${activeSection !== id ? 'hidden' : 'block'}`}>
+    <section id={id} className={`py-6 px-4 sm:px-6 ${activeSection !== id ? 'hidden' : 'block'}`}>
       {children}
     </section>
   );
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      <aside className="w-64 bg-[#744d14] text-white flex-shrink-0 p-6">
-        <h2 className="text-2xl font-bold mb-8">Admin Panel</h2>
+    <div className="min-h-screen flex flex-col sm:flex-row bg-gray-100">
+      {/* Sidebar */}
+      <aside className={`bg-[#744d14] text-white w-full sm:w-64 flex-shrink-0 p-4 sm:p-6 ${mobileMenuOpen ? 'block' : 'hidden'} sm:block`}>
+        <div className="flex justify-between items-center mb-4 sm:mb-8">
+          <h2 className="text-2xl font-bold">Admin Panel</h2>
+          <button className="sm:hidden" onClick={() => setMobileMenuOpen(false)}><FaTimes /></button>
+        </div>
         <nav className="space-y-4">
           <button onClick={() => setActiveSection('dashboard')} className="flex items-center space-x-2 hover:text-[#b88c3c]">
             <FaList /><span>Dashboard</span>
@@ -115,20 +113,27 @@ function AdminDashboard() {
         </nav>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-8">
+      {/* Mobile Toggle */}
+      <div className="sm:hidden p-4 flex justify-between bg-[#744d14] text-white">
+        <span className="font-bold text-lg">Admin Panel</span>
+        <button onClick={() => setMobileMenuOpen(true)}><FaBars /></button>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8">
         <Section id="dashboard">
           <h1 className="text-3xl font-bold text-[#744d14] mb-6">Welcome to Admin Dashboard</h1>
         </Section>
 
         <Section id="addTour">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
             <h2 className="text-2xl font-semibold text-[#744d14]">Tours</h2>
-            <button onClick={() => setShowModal(true)} className="bg-[#b88c3c] text-white px-4 py-2 rounded hover:bg-[#a6782e]">
+            <button onClick={() => setShowModal(true)} className="bg-[#b88c3c] text-white px-4 py-2 rounded hover:bg-[#a6782e] mt-2 sm:mt-0">
               Add Tour
             </button>
           </div>
 
-          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {tours.map((tour) => (
               <li key={tour.id} className="bg-white p-4 rounded shadow">
                 {tour.imageUrl && <img src={tour.imageUrl} alt={tour.title} className="w-full h-48 object-cover rounded mb-2" />}
