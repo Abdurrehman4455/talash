@@ -17,33 +17,29 @@ const LoginModal = ({ onClose }) => {
     setSuccess('');
 
     try {
-      // Convert 'admin' to 'admin@example.com'
       const finalEmail = email.includes('@') ? email : `${email}@example.com`;
 
-      // 🔐 Try Firebase Auth login
       const userCredential = await signInWithEmailAndPassword(auth, finalEmail, password);
       const uid = userCredential.user.uid;
 
-      // 🔎 Check if this UID exists in Firestore collection 'admins'
       const docRef = doc(db, 'admins', uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        // ✅ Log login time
         await setDoc(
-  doc(db, 'adminLogins', uid),
-  {
-    email: finalEmail,
-    loginTime: new Date().toISOString(),
-  },
-  { merge: true } // ✅ Prevents overwriting existing data
-);
+          doc(db, 'adminLogins', uid),
+          {
+            email: finalEmail,
+            loginTime: new Date().toISOString(),
+          },
+          { merge: true }
+        );
 
         setSuccess('✅ Successfully logged in to Admin Dashboard!');
         setTimeout(() => {
           onClose();
-        navigate('/admin-dashboard', { replace: true });
-        }, 10);
+          navigate('/admin-dashboard', { replace: true });
+        }, 500);
       } else {
         setError('Access denied: You are not an admin.');
       }
